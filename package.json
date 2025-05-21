@@ -1,6 +1,6 @@
 {
 	"name": "@mridang/commitlint-plugin-conditionals",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"type": "module",
 	"scripts": {
 		"prepack": "tsc",
