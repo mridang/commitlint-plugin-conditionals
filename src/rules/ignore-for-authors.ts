@@ -3,10 +3,20 @@ import type { Commit as ParserCommit } from 'conventional-commits-parser';
 
 /**
  * Defines the minimal expected structure of a dynamically imported
- * commitlint plugin module for rule access.
+ * commitlint plugin module for rule access. This helps in typing the module
+ * after dynamic import and guides how we try to access its rules.
  */
 interface LoadedCommitlintPluginModule {
-  default?: { rules?: Record<string, Rule<unknown> | undefined> };
+  /**
+   * The default export of the plugin module. This could be an object
+   * containing a 'rules' property, or it could be the rules map itself.
+   */
+  default?:
+    | { rules?: Record<string, Rule<unknown> | undefined> }
+    | Record<string, Rule<unknown> | undefined>;
+  /**
+   * A named 'rules' export from the plugin module.
+   */
   rules?: Record<string, Rule<unknown> | undefined>;
 }
 
@@ -58,6 +68,17 @@ export interface IgnoreForAuthorsRuleOptions {
 }
 
 /**
+ * The commit object type that `commitlint` rules actually receive at runtime.
+ * It extends the `Commit` type from `conventional-commits-parser`
+ * and ensures the `raw` property (the full commit message string)
+ * is present.
+ */
+// @ts-expect-error becuase dodod
+interface LintCommit extends ParserCommit {
+  raw: string;
+}
+
+/**
  * A `commitlint` rule named `ignoreForAuthors`.
  *
  * **Behavior:**
@@ -74,7 +95,7 @@ export interface IgnoreForAuthorsRuleOptions {
  *
  * This rule is asynchronous due to its use of dynamic `import()`.
  *
- * @param parsed - The parsed commit object, typed as `Commit` from
+ * @param parsedCommitData - The parsed commit object, typed as `Commit` from
  * `conventional-commits-parser`. It's expected that `commitlint` provides
  * this object augmented with a `raw: string` property at runtime.
  * @param when - Rule applicability, typically 'always' or 'never'.
@@ -83,7 +104,7 @@ export interface IgnoreForAuthorsRuleOptions {
  * @returns A `Promise<RuleOutcome>`.
  */
 export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
-  parsed: ParserCommit,
+  parsedCommitData: ParserCommit,
   when: RuleConfigCondition = 'always',
   value?: IgnoreForAuthorsRuleOptions,
 ): Promise<RuleOutcome> => {
@@ -91,10 +112,11 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     return [true, ''];
   }
 
+  const parsed = parsedCommitData as LintCommit;
   const options = value || {};
   const { ignoreAuthorPatterns, rulesToEnforce } = options;
 
-  const rawCommitMessage = (parsed as { raw?: string }).raw;
+  const rawCommitMessage = parsed.raw;
 
   if (typeof rawCommitMessage !== 'string') {
     return [
@@ -153,15 +175,47 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     let ruleFunction: Rule<unknown> | undefined;
 
     try {
-      // eslint-disable-next-line no-unsanitized/method
-      const targetPluginModule: LoadedCommitlintPluginModule = await import(
+      // eslint-disable-next-line
+      const targetPluginModule = (await import(
         packageName
-      );
-      const rulesObject =
-        targetPluginModule.default?.rules || targetPluginModule.rules;
+      )) as LoadedCommitlintPluginModule;
 
-      if (rulesObject && typeof rulesObject === 'object') {
-        ruleFunction = rulesObject[ruleName];
+      let rulesCatalog: Record<string, Rule<unknown> | undefined> | undefined;
+
+      /**
+       * Attempt to find the rules object in the imported module.
+       * Priority:
+       * 1. module.default.rules (common for plugins wrapping rules)
+       * 2. module.default (if default export IS the rules map, e.g., @commitlint/rules)
+       * 3. module.rules (named 'rules' export)
+       */
+      if (targetPluginModule.default) {
+        if (
+          typeof targetPluginModule.default.rules === 'object' &&
+          targetPluginModule.default.rules !== null
+        ) {
+          rulesCatalog = targetPluginModule.default.rules;
+        } else if (
+          typeof targetPluginModule.default === 'object' &&
+          targetPluginModule.default !== null
+        ) {
+          rulesCatalog = targetPluginModule.default as Record<
+            string,
+            Rule<unknown>
+          >;
+        }
+      }
+
+      if (
+        !rulesCatalog &&
+        typeof targetPluginModule.rules === 'object' &&
+        targetPluginModule.rules !== null
+      ) {
+        rulesCatalog = targetPluginModule.rules;
+      }
+
+      if (rulesCatalog) {
+        ruleFunction = rulesCatalog[ruleName];
       }
     } catch (error: unknown) {
       const errorMessage =
