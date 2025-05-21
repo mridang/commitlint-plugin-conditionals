@@ -20,7 +20,7 @@ interface PluginDefinition extends CommitlintPluginType {
 }
 
 /**
- * The main plugin object for `@mridang/commitlint-conditionals`.
+ * The main plugin object for `@mridang/commitlint-plugin-conditionals`.
  * This object is what `commitlint` will load and use. It exports the rules
  * provided by this plugin.
  *

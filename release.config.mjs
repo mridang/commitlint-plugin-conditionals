@@ -28,5 +28,5 @@ export default {
       },
     ],
   ],
-  repositoryUrl: "git+https://github.com/mridang/commitlint-conditionals.git"
+  repositoryUrl: "git+https://github.com/mridang/commitlint-plugin-conditionals.git"
 };

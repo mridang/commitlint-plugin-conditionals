@@ -99,7 +99,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
   if (typeof rawCommitMessage !== 'string') {
     return [
       false,
-      `[@mridang/commitlint-conditionals ignoreForAuthors] Raw commit message is not available or is invalid.`,
+      `[@mridang/commitlint-plugin-conditionals ignoreForAuthors] Raw commit message is not available or is invalid.`,
     ];
   }
 
@@ -111,7 +111,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     ) {
       return [
         false,
-        `[@mridang/commitlint-conditionals ignoreForAuthors] Configuration error: 'ignoreAuthorPatterns' must be an array of strings.`,
+        `[@mridang/commitlint-plugin-conditionals ignoreForAuthors] Configuration error: 'ignoreAuthorPatterns' must be an array of strings.`,
       ];
     }
     const matchedIgnoredPattern: string | undefined = ignoreAuthorPatterns.find(
@@ -121,7 +121,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     if (matchedIgnoredPattern) {
       return [
         true,
-        `[@mridang/commitlint-conditionals ignoreForAuthors] Commit by ignored author pattern ('${matchedIgnoredPattern}'). Ruleset defined in 'rulesToEnforce' bypassed.`,
+        `[@mridang/commitlint-plugin-conditionals ignoreForAuthors] Commit by ignored author pattern ('${matchedIgnoredPattern}'). Ruleset defined in 'rulesToEnforce' bypassed.`,
       ];
     }
   }
@@ -133,7 +133,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
   ) {
     return [
       true,
-      '[@mridang/commitlint-conditionals ignoreForAuthors] No rules configured in "rulesToEnforce" for this author, or author was ignored. Rule passes.',
+      '[@mridang/commitlint-plugin-conditionals ignoreForAuthors] No rules configured in "rulesToEnforce" for this author, or author was ignored. Rule passes.',
     ];
   }
 
@@ -145,7 +145,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     ) {
       return [
         false,
-        `[@mridang/commitlint-conditionals ignoreForAuthors] Invalid rule configuration in 'rulesToEnforce': 'packageName' and 'ruleName' must be strings.`,
+        `[@mridang/commitlint-plugin-conditionals ignoreForAuthors] Invalid rule configuration in 'rulesToEnforce': 'packageName' and 'ruleName' must be strings.`,
       ];
     }
 
@@ -168,14 +168,14 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
         error instanceof Error ? error.message : String(error);
       return [
         false,
-        `[@mridang/commitlint-conditionals ignoreForAuthors] Error loading plugin package '${packageName}': ${errorMessage}`,
+        `[@mridang/commitlint-plugin-conditionals ignoreForAuthors] Error loading plugin package '${packageName}': ${errorMessage}`,
       ];
     }
 
     if (typeof ruleFunction !== 'function') {
       return [
         false,
-        `[@mridang/commitlint-conditionals ignoreForAuthors] Rule '${ruleName}' not found or not a function in package '${packageName}'.`,
+        `[@mridang/commitlint-plugin-conditionals ignoreForAuthors] Rule '${ruleName}' not found or not a function in package '${packageName}'.`,
       ];
     }
 
@@ -187,13 +187,13 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     if (!isValid) {
       return [
         false,
-        `[@mridang/commitlint-conditionals via ${packageName}/${ruleName}] ${message}`,
+        `[@mridang/commitlint-plugin-conditionals via ${packageName}/${ruleName}] ${message}`,
       ];
     }
   }
 
   return [
     true,
-    '[@mridang/commitlint-conditionals ignoreForAuthors] All configured "rulesToEnforce" passed for this author.',
+    '[@mridang/commitlint-plugin-conditionals ignoreForAuthors] All configured "rulesToEnforce" passed for this author.',
   ];
 };

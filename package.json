@@ -1,5 +1,5 @@
 {
-	"name": "@mridang/commitlint-conditionals",
+	"name": "@mridang/commitlint-plugin-conditionals",
 	"version": "1.0.1",
 	"type": "module",
 	"scripts": {
@@ -40,10 +40,10 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/mridang/commitlint-conditionals.git"
+		"url": "git+https://github.com/mridang/commitlint-plugin-conditionals.git"
 	},
-	"homepage": "https://github.com/mridang/commitlint-conditionals",
-	"bugs": "https://github.com/mridang/commitlint-conditionals/issues",
+	"homepage": "https://github.com/mridang/commitlint-plugin-conditionals",
+	"bugs": "https://github.com/mridang/commitlint-plugin-conditionals/issues",
 	"devDependencies": {
 		"@jest/globals": "^29.7.0",
 		"@mridang/eslint-defaults": "^1.0.0",

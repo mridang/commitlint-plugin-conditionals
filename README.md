@@ -35,7 +35,7 @@ scrutiny or slightly varied rules:
   new linting rules but apply them conditionally at first, or only to
   certain types of commits, before making them universal.
 
-This plugin, `@mridang/commitlint-conditionals`, aims to provide the
+This plugin, `@mridang/commitlint-plugin-conditionals`, aims to provide the
 flexibility to handle such scenarios. It allows you to define conditions
 (initially based on author patterns) under which commit linting rules are
 applied differently, or even skipped entirely. This helps maintain high
@@ -49,12 +49,12 @@ process.
 Install using NPM by using the following command:
 
 ```sh
-npm install --save @mridang/commitlint-conditionals
+npm install --save @mridang/commitlint-plugin-conditionals
 ```
 
 ## Usage
 
-To use this plugin, add `@mridang/commitlint-conditionals` to your `commitlint`
+To use this plugin, add `@mridang/commitlint-plugin-conditionals` to your `commitlint`
 configuration file (e.g., `commitlint.config.js` or `.commitlintrc.js`).
 
 You'll need to list it in the `plugins` array. The rules provided by this
@@ -72,7 +72,7 @@ const config = {
     '@commitlint/config-conventional', // Or your preferred base configuration
   ],
   plugins: [
-    '@mridang/commitlint-conditionals', // Add the plugin by its package name
+    '@mridang/commitlint-plugin-conditionals', // Add the plugin by its package name
   ],
   rules: {
     // Rule configuration will go here
@@ -86,7 +86,7 @@ module.exports = config;
 
 This rule is the core of the plugin.
 
-**Rule Name:** `@mridang/commitlint-conditionals/ignore-for-authors`
+**Rule Name:** `@mridang/commitlint-plugin-conditionals/ignore-for-authors`
 
 **Options (`IgnoreForAuthorsRuleOptions`):**
 
@@ -132,7 +132,7 @@ still inheriting other rules from `@commitlint/config-conventional`.
  */
 module.exports = {
   extends: ['@commitlint/config-conventional'],
-  plugins: ['@mridang/commitlint-conditionals'],
+  plugins: ['@mridang/commitlint-plugin-conditionals'],
   rules: {
     /**
      * Disable these specific rules from '@commitlint/config-conventional'
@@ -142,11 +142,11 @@ module.exports = {
     'type-enum': [0],
 
     /**
-     * Configure the rule from @mridang/commitlint-conditionals.
+     * Configure the rule from @mridang/commitlint-plugin-conditionals.
      * JSDoc types for options can be helpful for clarity:
-     * @type {[number, string, import('@mridang/commitlint-conditionals').IgnoreForAuthorsRuleOptions]}
+     * @type {[number, string, import('@mridang/commitlint-plugin-conditionals').IgnoreForAuthorsRuleOptions]}
      */
-    '@mridang/commitlint-conditionals/ignore-for-authors': [
+    '@mridang/commitlint-plugin-conditionals/ignore-for-authors': [
       2, // Severity: Error for this conditional rule itself
       'always',
       {
@@ -198,7 +198,7 @@ module.exports = {
 ## Useful links
 
 - **[Commitlint](https://commitlint.js.org/):** The linting tool for commit
-  messages that `@mridang/commitlint-conditionals` integrates with.
+  messages that `@mridang/commitlint-plugin-conditionals` integrates with.
 - **[Conventional Commits](https://www.conventionalcommits.org/):** The commit
   convention that `commitlint` often enforces.
 

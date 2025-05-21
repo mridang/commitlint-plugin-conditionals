@@ -229,7 +229,7 @@ describe('ignoreForAuthors Rule - rulesToEnforce Functionality', () => {
 
     expect(valid).toBe(true);
     expect(message).toContain(
-      '[@mridang/commitlint-conditionals ignoreForAuthors] All configured "rulesToEnforce" passed for this author.',
+      '[@mridang/commitlint-plugin-conditionals ignoreForAuthors] All configured "rulesToEnforce" passed for this author.',
     );
     expect(mockCommitlintRulesCatalogue['type-enum']).toHaveBeenCalledWith(
       commit,
@@ -253,7 +253,7 @@ describe('ignoreForAuthors Rule - rulesToEnforce Functionality', () => {
     const [valid, message] = await ignoreForAuthors(commit, 'always', options);
     expect(valid).toBe(false);
     expect(message).toContain(
-      '[@mridang/commitlint-conditionals via @commitlint/rules/header-max-length] header too long',
+      '[@mridang/commitlint-plugin-conditionals via @commitlint/rules/header-max-length] header too long',
     );
   });
 
@@ -269,7 +269,7 @@ describe('ignoreForAuthors Rule - rulesToEnforce Functionality', () => {
     const [valid, message] = await ignoreForAuthors(commit, 'always', options);
     expect(valid).toBe(false);
     expect(message).toContain(
-      '[@mridang/commitlint-conditionals via @commitlint/rules/type-enum] type invalid',
+      '[@mridang/commitlint-plugin-conditionals via @commitlint/rules/type-enum] type invalid',
     );
     expect(
       mockCommitlintRulesCatalogue['header-max-length'],
@@ -462,7 +462,7 @@ describe('ignoreForAuthors Rule - rulesToEnforce Functionality', () => {
 
       expect(valid).toBe(false);
       expect(message).toContain(
-        `[@mridang/commitlint-conditionals via @commitlint/rules/body-max-line-length] Mocked body-max-line-length: A line exceeds ${conventionalBodyMaxLength} characters.`,
+        `[@mridang/commitlint-plugin-conditionals via @commitlint/rules/body-max-line-length] Mocked body-max-line-length: A line exceeds ${conventionalBodyMaxLength} characters.`,
       );
       expect(
         mockCommitlintRulesCatalogue['body-max-line-length'],
