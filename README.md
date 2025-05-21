@@ -61,7 +61,6 @@ You'll need to list it in the `plugins` array. The rules provided by this
 plugin will then be available to be configured in the `rules` object, prefixed
 with the plugin's name.
 
-
 First, add the plugin to the `plugins` array in your `commitlint` configuration:
 
 ```javascript
@@ -93,18 +92,19 @@ This rule is the core of the plugin.
 
 The rule accepts an object with the following properties:
 
-* `ignoreAuthorPatterns?: string[]`:
-    * An array of string patterns (e.g., `['dependabot[bot]', 'renovate-bot']`).
-    * If a pattern matches content in the raw commit message, the rules
-        defined in `rulesToEnforce` are bypassed for that commit.
+- `ignoreAuthorPatterns?: string[]`:
 
-* `rulesToEnforce?: ExternalRuleToEnforce[]`:
-    * An array of rule configurations to apply if the commit is **not** from an
-        ignored author.
-    * Each entry is an object:
-        * `packageName: string`: NPM package name (e.g., `'@commitlint/rules'`).
-        * `ruleName: string`: Rule name within that package (e.g., `'type-enum'`).
-        * `value: unknown`: Configuration value for that rule.
+  - An array of string patterns (e.g., `['dependabot[bot]', 'renovate-bot']`).
+  - If a pattern matches content in the raw commit message, the rules
+    defined in `rulesToEnforce` are bypassed for that commit.
+
+- `rulesToEnforce?: ExternalRuleToEnforce[]`:
+  - An array of rule configurations to apply if the commit is **not** from an
+    ignored author.
+  - Each entry is an object:
+    - `packageName: string`: NPM package name (e.g., `'@commitlint/rules'`).
+    - `ruleName: string`: Rule name within that package (e.g., `'type-enum'`).
+    - `value: unknown`: Configuration value for that rule.
 
 **Behavior:**
 
@@ -161,9 +161,19 @@ module.exports = {
           {
             packageName: '@commitlint/rules',
             ruleName: 'type-enum',
-            value: [ // Standard types for humans
-              'build', 'chore', 'ci', 'docs', 'feat', 'fix', 'perf',
-              'refactor', 'revert', 'style', 'test',
+            value: [
+              // Standard types for humans
+              'build',
+              'chore',
+              'ci',
+              'docs',
+              'feat',
+              'fix',
+              'perf',
+              'refactor',
+              'revert',
+              'style',
+              'test',
             ],
           },
         ],
@@ -181,9 +191,9 @@ module.exports = {
 
 ## Known Issues
 
-* **Rule Scope and Limitations:** The `ignore-for-authors` rule, when used as a standard plugin rule, identifies matching author patterns and will itself pass. However, it **does not prevent other configured `commitlint` rules from executing**. To achieve a full bypass of all linting for specific authors, a dynamic JavaScript/TypeScript configuration (`commitlint.config.js` or `.ts`) is necessary, as demonstrated in the [Usage](#usage) section. This is a fundamental aspect of how `commitlint` processes rules.
-* **Author Pattern Specificity:** The effectiveness of the `ignore-for-authors` rule depends on the accuracy and specificity of the patterns provided. Vague patterns might unintentionally match more commits than desired. Patterns are checked against the raw commit message.
-* **Dynamic Configuration Complexity:** While powerful, using a dynamic JavaScript/TypeScript configuration file to achieve a true bypass requires understanding how to structure this configuration and potentially how to access commit message content at the time the configuration is loaded (which can be environment-dependent, e.g., when using Git hooks like Husky).
+- **Rule Scope and Limitations:** The `ignore-for-authors` rule, when used as a standard plugin rule, identifies matching author patterns and will itself pass. However, it **does not prevent other configured `commitlint` rules from executing**. To achieve a full bypass of all linting for specific authors, a dynamic JavaScript/TypeScript configuration (`commitlint.config.js` or `.ts`) is necessary, as demonstrated in the [Usage](#usage) section. This is a fundamental aspect of how `commitlint` processes rules.
+- **Author Pattern Specificity:** The effectiveness of the `ignore-for-authors` rule depends on the accuracy and specificity of the patterns provided. Vague patterns might unintentionally match more commits than desired. Patterns are checked against the raw commit message.
+- **Dynamic Configuration Complexity:** While powerful, using a dynamic JavaScript/TypeScript configuration file to achieve a true bypass requires understanding how to structure this configuration and potentially how to access commit message content at the time the configuration is loaded (which can be environment-dependent, e.g., when using Git hooks like Husky).
 
 ## Useful links
 
