@@ -72,7 +72,7 @@ const config = {
     '@commitlint/config-conventional', // Or your preferred base configuration
   ],
   plugins: [
-    '@mridang/commitlint-plugin-conditionals', // Add the plugin by its package name
+    '@mridang/conditionals', // Add the plugin by its package name
   ],
   rules: {
     // Rule configuration will go here
@@ -126,64 +126,66 @@ and `type-enum` settings for `dependabot[bot]` versus other users, while
 still inheriting other rules from `@commitlint/config-conventional`.
 
 ```javascript
-// commitlint.config.js
+import { RuleConfigSeverity } from '@commitlint/types';
+import mridangConditionalsPlugin from '@mridang/commitlint-conditionals';
+
 /**
  * @type {import('@commitlint/types').UserConfig}
  */
-module.exports = {
+export default {
   extends: ['@commitlint/config-conventional'],
-  plugins: ['@mridang/commitlint-plugin-conditionals'],
+  plugins: [mridangConditionalsPlugin],
   rules: {
     /**
-     * Disable these specific rules from '@commitlint/config-conventional'
-     * because we want our plugin to control them conditionally.
+     * Disable the 'body-max-line-length' rule from '@commitlint/config-conventional'
+     * because we want our plugin to control it conditionally.
+     * Using RuleConfigSeverity.Disabled (which is 0).
      */
-    'body-max-line-length': [0],
-    'type-enum': [0],
+    'body-max-line-length': [RuleConfigSeverity.Disabled, 'always'],
 
     /**
-     * Configure the rule from @mridang/commitlint-plugin-conditionals.
-     * JSDoc types for options can be helpful for clarity:
-     * @type {[number, string, import('@mridang/commitlint-plugin-conditionals').IgnoreForAuthorsRuleOptions]}
+     * Configure the rule from your plugin.
+     * The rule name is prefixed with your actual package name.
+     * Options type (for JSDoc reference if needed):
+     * import('@mridang/commitlint-conditionals').IgnoreForAuthorsRuleOptions
      */
-    '@mridang/commitlint-plugin-conditionals/ignore-for-authors': [
-      2, // Severity: Error for this conditional rule itself
-      'always',
+    '@mridang/commitlint-conditionals/ignoreForAuthors': [
+      RuleConfigSeverity.Error, // Severity: Error (2) for this conditional rule itself
+      'always', // Condition
       {
-        ignoreAuthorPatterns: ['dependabot[bot]'],
+        /**
+         * Use 'signOffPatternsToIgnore' to specify patterns within
+         * 'Signed-off-by:' lines.
+         */
+        signOffPatternsToIgnore: [
+          'dependabot[bot]',
+          // Add other patterns like 'bot@example.com'
+        ],
         rulesToEnforce: [
-          // For non-dependabot users, enforce these:
+          // For commits not matching signOffPatternsToIgnore, enforce this:
           {
             packageName: '@commitlint/rules',
             ruleName: 'body-max-line-length',
             value: 100, // Standard limit for humans
           },
-          {
-            packageName: '@commitlint/rules',
-            ruleName: 'type-enum',
-            value: [
-              // Standard types for humans
-              'build',
-              'chore',
-              'ci',
-              'docs',
-              'feat',
-              'fix',
-              'perf',
-              'refactor',
-              'revert',
-              'style',
-              'test',
-            ],
-          },
+          // Example: Enforcing type-enum for non-bots
+          // {
+          //   packageName: '@commitlint/rules',
+          //   ruleName: 'type-enum',
+          //   value: [
+          //     'build', 'chore', 'ci', 'docs', 'feat', 'fix', 'perf',
+          //     'refactor', 'revert', 'style', 'test',
+          //   ],
+          // },
         ],
       },
     ],
     /**
-     * Note: Other rules from '@commitlint/config-conventional' like
-     * 'header-max-length', 'subject-empty', etc. (which were NOT disabled)
-     * will STILL APPLY to ALL commits, including dependabot.
-     * To truly bypass ALL rules for dependabot, see the next section.
+     * Note:
+     * - Other rules from '@commitlint/config-conventional' (e.g., 'type-enum'
+     * if not handled by the plugin above and its original disabled)
+     * that were NOT disabled will now apply to ALL commits.
+     * - This example makes 'body-max-line-length' conditional.
      */
   },
 };
@@ -191,9 +193,9 @@ module.exports = {
 
 ## Known Issues
 
-- **Rule Scope and Limitations:** The `ignore-for-authors` rule, when used as a standard plugin rule, identifies matching author patterns and will itself pass. However, it **does not prevent other configured `commitlint` rules from executing**. To achieve a full bypass of all linting for specific authors, a dynamic JavaScript/TypeScript configuration (`commitlint.config.js` or `.ts`) is necessary, as demonstrated in the [Usage](#usage) section. This is a fundamental aspect of how `commitlint` processes rules.
-- **Author Pattern Specificity:** The effectiveness of the `ignore-for-authors` rule depends on the accuracy and specificity of the patterns provided. Vague patterns might unintentionally match more commits than desired. Patterns are checked against the raw commit message.
-- **Dynamic Configuration Complexity:** While powerful, using a dynamic JavaScript/TypeScript configuration file to achieve a true bypass requires understanding how to structure this configuration and potentially how to access commit message content at the time the configuration is loaded (which can be environment-dependent, e.g., when using Git hooks like Husky).
+- **External Rule Dependencies (`rulesToEnforce`):** When configuring `rulesToEnforce`, ensure each specified `packageName` is installed in your project and exports its rule functions in a standard `commitlint` plugin format. The plugin will dynamically load these external rules.
+- **Author Identification (`signOffPatternsToIgnore`):** This feature identifies authors by searching for your specified patterns within `Signed-off-by:` lines in the raw commit message text. It does not directly use Git's discrete author fields (e.g., `GIT_AUTHOR_NAME`).
+- **Plugin's Scope of Control:** This plugin conditionally applies only those rules explicitly listed in its `rulesToEnforce` option. It does **not** automatically bypass other rules inherited via `extends` or defined elsewhere in your main `commitlint` configuration. For a global bypass of all rules for certain authors, a dynamic JavaScript/TypeScript configuration file (`commitlint.config.js` or `.ts`) is necessary, as detailed in the "Usage" section.
 
 ## Useful links
 
