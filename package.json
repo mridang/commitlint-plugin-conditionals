@@ -36,7 +36,7 @@
 	"description": "Semantic Release plugin that prevents major releases unless a corresponding tag exists on a specific branch in an upstream GitHub repository.",
 	"private": false,
 	"engines": {
-		"node": "20.x"
+		"node": ">=20.0.0"
 	},
 	"repository": {
 		"type": "git",
