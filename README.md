@@ -127,7 +127,7 @@ still inheriting other rules from `@commitlint/config-conventional`.
 
 ```javascript
 import { RuleConfigSeverity } from '@commitlint/types';
-import mridangConditionalsPlugin from '@mridang/commitlint-conditionals';
+import mridangConditionalsPlugin from '@mridang/commitlint-plugin-conditionals'; // eslint-disable-line
 
 /**
  * @type {import('@commitlint/types').UserConfig}
