@@ -93,7 +93,6 @@ This rule is the core of the plugin.
 The rule accepts an object with the following properties:
 
 - `ignoreAuthorPatterns?: string[]`:
-
   - An array of string patterns (e.g., `['dependabot[bot]', 'renovate-bot']`).
   - If a pattern matches content in the raw commit message, the rules
     defined in `rulesToEnforce` are bypassed for that commit.
