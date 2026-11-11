@@ -1,3 +1,6 @@
+/**
+ * @file Implements the `ignore-for-authors` commitlint rule, which bypasses a configured rule set for trusted sign-offs.
+ */
 import type { Rule, RuleConfigCondition, RuleOutcome } from '@commitlint/types';
 import type { Commit as ParserCommit } from 'conventional-commits-parser';
 
@@ -11,6 +14,11 @@ interface LoadedCommitlintPluginModule {
     | Record<string, Rule<unknown> | undefined>;
   rules?: Record<string, Rule<unknown> | undefined>;
 }
+
+/**
+ * A map of rule names to rule functions, as exported by a commitlint plugin.
+ */
+type RulesCatalog = Record<string, Rule<unknown> | undefined>;
 
 /**
  * Configuration for a single external rule to be enforced if the commit
@@ -74,6 +82,94 @@ interface LintCommit extends ParserCommit {
 }
 
 /**
+ * Checks whether a value is a non-null object at runtime.
+ * @param value - The value to check.
+ * @returns True when the value is a non-null object.
+ * @example
+ * isObject({ rules: {} }); // => true
+ */
+const isObject = (value: unknown): value is object =>
+  typeof value === 'object' && value !== null;
+
+/**
+ * Finds the first configured sign-off pattern that appears in a
+ * `Signed-off-by:` line of a commit message.
+ * @param rawCommitMessage - The full raw commit message.
+ * @param signOffPatterns - The patterns whose match bypasses the rule set.
+ * @returns The matched pattern, or undefined when no sign-off matches.
+ * @example
+ * findIgnoredSignOff('feat: x\n\nSigned-off-by: dependabot[bot] <a@b.c>', [
+ *   'dependabot[bot]',
+ * ]); // => 'dependabot[bot]'
+ */
+const findIgnoredSignOff = (
+  rawCommitMessage: string,
+  signOffPatterns: string[],
+): string | undefined => {
+  const signOffRegex = /^Signed-off-by:(.*)$/gim;
+  const extractedSignOffs: string[] = [];
+  let match;
+  while ((match = signOffRegex.exec(rawCommitMessage)) !== null) {
+    extractedSignOffs.push(match[1].trim());
+  }
+
+  return signOffPatterns.find((ignorePattern) =>
+    extractedSignOffs.some((actualSignOff) =>
+      actualSignOff.includes(ignorePattern),
+    ),
+  );
+};
+
+/**
+ * Finds the rules catalog exported by an imported commitlint plugin module.
+ * It prefers the `rules` property of the default export, then the default
+ * export itself, then the module's named `rules` export.
+ * @param targetPluginModule - The dynamically imported plugin module.
+ * @returns The rules catalog, or undefined when the module exports none.
+ * @example
+ * const pluginModule = await import('@commitlint/rules');
+ * findRulesCatalog(pluginModule); // => { 'type-enum': [Function], ... }
+ */
+const findRulesCatalog = (
+  targetPluginModule: LoadedCommitlintPluginModule,
+): RulesCatalog | undefined => {
+  const defaultExport: unknown = targetPluginModule.default;
+  const defaultRules = defaultExport
+    ? (defaultExport as { rules?: unknown }).rules
+    : undefined;
+  if (isObject(defaultRules)) {
+    return defaultRules as RulesCatalog;
+  }
+  if (isObject(defaultExport)) {
+    return defaultExport as RulesCatalog;
+  }
+  const moduleRules: unknown = targetPluginModule.rules;
+  return isObject(moduleRules) ? (moduleRules as RulesCatalog) : undefined;
+};
+
+/**
+ * Resolves a rule function by importing the package that exports it.
+ * @param packageName - The npm package that exports the rule.
+ * @param ruleName - The name of the rule within that package's rules catalog.
+ * @returns The rule function, or undefined when the package does not export it.
+ * @throws {Error} When the package cannot be imported.
+ * @example
+ * const typeEnum = await resolveRuleFunction('@commitlint/rules', 'type-enum');
+ */
+const resolveRuleFunction = async (
+  packageName: string,
+  ruleName: string,
+): Promise<Rule<unknown> | undefined> => {
+  // eslint-disable-next-line no-unsanitized/method -- packageName comes from the trusted commitlint configuration.
+  const targetPluginModule = (await import(
+    packageName
+  )) as LoadedCommitlintPluginModule;
+
+  const rulesCatalog = findRulesCatalog(targetPluginModule);
+  return rulesCatalog?.[ruleName];
+};
+
+/**
  * A `commitlint` rule named `ignoreForAuthors`.
  * (JSDoc from previous version describing behavior is still applicable)
  * This rule is asynchronous due to its use of dynamic `import()`.
@@ -81,6 +177,13 @@ interface LintCommit extends ParserCommit {
  * @param when - Rule applicability.
  * @param value - Options for this rule.
  * @returns A `Promise<RuleOutcome>`.
+ * @example
+ * const outcome = await ignoreForAuthors(parsedCommit, 'always', {
+ *   signOffPatternsToIgnore: ['dependabot[bot]'],
+ *   rulesToEnforce: [
+ *     { packageName: '@commitlint/rules', ruleName: 'type-enum', value: [2, 'always', ['feat', 'fix']] },
+ *   ],
+ * });
  */
 export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
   parsedCommitData: ParserCommit,
@@ -118,28 +221,15 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
       ];
     }
 
-    if (signOffPatternsToIgnore.length > 0) {
-      const signOffRegex = /^Signed-off-by:\s*(.*)$/gim;
-      let match;
-      const extractedSignOffs: string[] = [];
-      while ((match = signOffRegex.exec(rawCommitMessage)) !== null) {
-        extractedSignOffs.push(match[1].trim());
-      }
-
-      if (extractedSignOffs.length > 0) {
-        const matchedPattern = signOffPatternsToIgnore.find((ignorePattern) =>
-          extractedSignOffs.some((actualSignOff) =>
-            actualSignOff.includes(ignorePattern),
-          ),
-        );
-
-        if (matchedPattern) {
-          return [
-            true,
-            `Commit has a 'Signed-off-by' line matching pattern ('${matchedPattern}'). Ruleset defined in 'rulesToEnforce' bypassed.`, // Prefix removed
-          ];
-        }
-      }
+    const matchedPattern = findIgnoredSignOff(
+      rawCommitMessage,
+      signOffPatternsToIgnore,
+    );
+    if (matchedPattern) {
+      return [
+        true,
+        `Commit has a 'Signed-off-by' line matching pattern ('${matchedPattern}'). Ruleset defined in 'rulesToEnforce' bypassed.`, // Prefix removed
+      ];
     }
   }
 
@@ -171,38 +261,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     let ruleFunction: Rule<unknown> | undefined;
 
     try {
-      // eslint-disable-next-line no-unsanitized/method
-      const targetPluginModule = (await import(
-        packageName
-      )) as LoadedCommitlintPluginModule;
-
-      let rulesCatalog: Record<string, Rule<unknown> | undefined> | undefined;
-
-      if (targetPluginModule.default) {
-        if (
-          typeof targetPluginModule.default.rules === 'object' &&
-          targetPluginModule.default.rules !== null
-        ) {
-          rulesCatalog = targetPluginModule.default.rules;
-        } else if (typeof targetPluginModule.default === 'object') {
-          rulesCatalog = targetPluginModule.default as Record<
-            string,
-            Rule<unknown>
-          >;
-        }
-      }
-
-      if (
-        !rulesCatalog &&
-        typeof targetPluginModule.rules === 'object' &&
-        targetPluginModule.rules !== null
-      ) {
-        rulesCatalog = targetPluginModule.rules;
-      }
-
-      if (rulesCatalog) {
-        ruleFunction = rulesCatalog[ruleName];
-      }
+      ruleFunction = await resolveRuleFunction(packageName, ruleName);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);

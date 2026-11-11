@@ -1,3 +1,6 @@
+/**
+ * @file Entry point of the commitlint plugin that exports its rules.
+ */
 import type { Rule, Plugin as CommitlintPluginType } from '@commitlint/types';
 import { ignoreForAuthors } from './rules/ignore-for-authors.js';
 import type { IgnoreForAuthorsRuleOptions } from './rules/ignore-for-authors.js';
