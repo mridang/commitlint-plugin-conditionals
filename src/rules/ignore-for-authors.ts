@@ -19,15 +19,17 @@ interface LoadedCommitlintPluginModule {
 export interface ExternalRuleToEnforce {
   /**
    * The name of the NPM package that exports the rule.
-   * Examples: '@commitlint/rules', 'commitlint-plugin-jira'
+   * Examples: '@commitlint/rules', 'commitlint-plugin-jira'.
    */
   packageName: string;
+
   /**
    * The name of the rule as exported by the `rules` object of the plugin
    * specified in `packageName`.
-   * Example: 'type-enum', 'header-max-length', 'jira-task-id-empty'
+   * Example: 'type-enum', 'header-max-length', 'jira-task-id-empty'.
    */
   ruleName: string;
+
   /**
    * The value/options to pass to the target rule. The structure of this
    * value depends entirely on the requirements of the target rule from
@@ -50,6 +52,7 @@ export interface IgnoreForAuthorsRuleOptions {
    * `rulesToEnforce` are always processed.
    */
   signOffPatternsToIgnore?: string[];
+
   /**
    * An array of external rule configurations to apply if the commit does
    * not have a `Signed-off-by:` line matching `signOffPatternsToIgnore`.
@@ -74,7 +77,6 @@ interface LintCommit extends ParserCommit {
  * A `commitlint` rule named `ignoreForAuthors`.
  * (JSDoc from previous version describing behavior is still applicable)
  * This rule is asynchronous due to its use of dynamic `import()`.
- *
  * @param parsedCommitData - The parsed commit object.
  * @param when - Rule applicability.
  * @param value - Options for this rule.

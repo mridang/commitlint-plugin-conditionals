@@ -25,7 +25,7 @@ const createCommit = (
   bodyInput: string | null = null,
 ): ExpectedCommitType => {
   const headerString =
-    typeof rawInput === 'string' ? rawInput.split('\n')[0] : null;
+    typeof rawInput === 'string' ? rawInput.split('\n', 1)[0] : null;
   const mock = {
     raw: rawInput,
     header: headerString,

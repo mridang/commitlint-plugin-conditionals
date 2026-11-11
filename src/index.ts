@@ -47,4 +47,5 @@ export default plugin;
  * configurations are type-checked against the options expected by this
  * plugin's rules, enhancing configuration safety and developer experience.
  */
-export type { IgnoreForAuthorsRuleOptions };
+
+export { type IgnoreForAuthorsRuleOptions } from './rules/ignore-for-authors.js';
