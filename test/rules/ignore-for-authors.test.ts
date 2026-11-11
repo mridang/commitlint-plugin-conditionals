@@ -1,3 +1,6 @@
+/**
+ * @file Unit tests for the `ignore-for-authors` commitlint rule.
+ */
 import { jest } from '@jest/globals';
 import type { Commit as ParserCommit } from 'conventional-commits-parser';
 import type { RuleOutcome, Rule } from '@commitlint/types';
@@ -19,13 +22,16 @@ type ExpectedCommitType = ParserCommit & { raw: string };
  * @param rawInput - The raw commit message string.
  * @param bodyInput - Optional body for the commit.
  * @returns A mock object cast to ExpectedCommitType.
+ * @example
+ * const commit = createCommit('feat: add login', 'Body text.');
+ * commit.header; // => 'feat: add login'
  */
 const createCommit = (
   rawInput: string,
   bodyInput: string | null = null,
 ): ExpectedCommitType => {
   const headerString =
-    typeof rawInput === 'string' ? rawInput.split('\n')[0] : null;
+    typeof rawInput === 'string' ? rawInput.split('\n', 1)[0] : null;
   const mock = {
     raw: rawInput,
     header: headerString,
@@ -47,7 +53,7 @@ const createCommit = (
 };
 
 /**
- * Mocks for rule functions from @commitlint/rules.
+ * Mocks for rule functions from `@commitlint/rules`.
  */
 const mockCommitlintRulesCatalogue: Record<string, jest.Mock<Rule<unknown>>> = {
   'type-enum': jest.fn<Rule<unknown>>(),
