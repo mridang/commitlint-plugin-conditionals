@@ -160,7 +160,7 @@ const resolveRuleFunction = async (
   packageName: string,
   ruleName: string,
 ): Promise<Rule<unknown> | undefined> => {
-  // eslint-disable-next-line no-unsanitized/method -- packageName comes from the trusted commitlint configuration.
+  // eslint-disable-next-line no-unsanitized/method -- the plugin to load is named in the user's commitlint config, so import() needs a runtime specifier; a static import cannot work and createRequire would break ESM-only plugins
   const targetPluginModule = (await import(
     packageName
   )) as LoadedCommitlintPluginModule;
