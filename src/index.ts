@@ -3,7 +3,6 @@
  */
 import type { Rule, Plugin as CommitlintPluginType } from '@commitlint/types';
 import { ignoreForAuthors } from './rules/ignore-for-authors.js';
-import type { IgnoreForAuthorsRuleOptions } from './rules/ignore-for-authors.js';
 
 /**
  * Defines the structure of the commitlint plugin being exported.
@@ -36,7 +35,7 @@ interface PluginDefinition extends CommitlintPluginType {
  */
 const plugin: PluginDefinition = {
   rules: {
-    'ignore-for-authors': ignoreForAuthors as Rule<IgnoreForAuthorsRuleOptions>,
+    'ignore-for-authors': ignoreForAuthors,
   },
 };
 
