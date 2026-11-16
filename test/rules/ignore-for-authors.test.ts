@@ -82,9 +82,7 @@ describe('ignoreForAuthors Rule - Basic Functionality & ignoreAuthorPatterns (no
 
   beforeEach(() => {
     for (const key in mockCommitlintRulesCatalogue) {
-      if (
-        Object.prototype.hasOwnProperty.call(mockCommitlintRulesCatalogue, key)
-      ) {
+      if (Object.hasOwn(mockCommitlintRulesCatalogue, key)) {
         mockCommitlintRulesCatalogue[key] = jest
           .fn<Rule<unknown>>()
           .mockReturnValue([true, '']);
@@ -218,9 +216,7 @@ describe('ignoreForAuthors Rule - rulesToEnforce Functionality', () => {
 
   beforeEach(() => {
     for (const key in mockCommitlintRulesCatalogue) {
-      if (
-        Object.prototype.hasOwnProperty.call(mockCommitlintRulesCatalogue, key)
-      ) {
+      if (Object.hasOwn(mockCommitlintRulesCatalogue, key)) {
         mockCommitlintRulesCatalogue[key] = jest
           .fn<Rule<unknown>>()
           .mockReturnValue([true, '']);
