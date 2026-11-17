@@ -5,22 +5,6 @@ import type { Rule, RuleConfigCondition, RuleOutcome } from '@commitlint/types';
 import type { Commit } from 'conventional-commits-parser';
 
 /**
- * Defines the minimal expected structure of a dynamically imported
- * commitlint plugin module for rule access.
- */
-interface LoadedCommitlintPluginModule {
-  default?:
-    | { rules?: Record<string, Rule<unknown> | undefined> }
-    | Record<string, Rule<unknown> | undefined>;
-  rules?: Record<string, Rule<unknown> | undefined>;
-}
-
-/**
- * A map of rule names to rule functions, as exported by a commitlint plugin.
- */
-type RulesCatalog = Record<string, Rule<unknown> | undefined>;
-
-/**
  * Configuration for a single external rule to be enforced if the commit
  * is not from an ignored author.
  */
@@ -71,24 +55,13 @@ export interface IgnoreForAuthorsRuleOptions {
 }
 
 /**
- * The commit object type that `commitlint` rules actually receive at runtime.
- * It extends the `Commit` type from `conventional-commits-parser`
- * and ensures the `raw` property (the full commit message string)
- * is present.
- */
-// @ts-expect-error: raw is not present in the Commit type.
-interface LintCommit extends Commit {
-  raw: string;
-}
-
-/**
- * Checks whether a value is a non-null object at runtime.
+ * Checks whether a value is a non-null object at runtime, so its properties can be read by name.
  * @param value - The value to check.
  * @returns True when the value is a non-null object.
  * @example
- * isObject({ rules: {} }); // => true
+ * isRecord({ rules: {} }); // => true
  */
-const isObject = (value: unknown): value is object =>
+const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 /**
@@ -129,20 +102,20 @@ const findIgnoredSignOff = (
  * findRulesCatalog(pluginModule); // => { 'type-enum': [Function], ... }
  */
 const findRulesCatalog = (
-  targetPluginModule: LoadedCommitlintPluginModule,
-): RulesCatalog | undefined => {
-  const defaultExport: unknown = targetPluginModule.default;
-  const defaultRules = defaultExport
-    ? (defaultExport as { rules?: unknown }).rules
+  targetPluginModule: Record<string, unknown>,
+): Record<string, unknown> | undefined => {
+  const defaultExport = targetPluginModule.default;
+  const defaultRules = isRecord(defaultExport)
+    ? defaultExport.rules
     : undefined;
-  if (isObject(defaultRules)) {
-    return defaultRules as RulesCatalog;
+  if (isRecord(defaultRules)) {
+    return defaultRules;
   }
-  if (isObject(defaultExport)) {
-    return defaultExport as RulesCatalog;
+  if (isRecord(defaultExport)) {
+    return defaultExport;
   }
-  const moduleRules: unknown = targetPluginModule.rules;
-  return isObject(moduleRules) ? (moduleRules as RulesCatalog) : undefined;
+  const moduleRules = targetPluginModule.rules;
+  return isRecord(moduleRules) ? moduleRules : undefined;
 };
 
 /**
@@ -159,12 +132,14 @@ const resolveRuleFunction = async (
   ruleName: string,
 ): Promise<Rule<unknown> | undefined> => {
   // eslint-disable-next-line no-unsanitized/method -- the plugin to load is named in the user's commitlint config, so import() needs a runtime specifier; a static import cannot work and createRequire would break ESM-only plugins
-  const targetPluginModule = (await import(
-    packageName
-  )) as LoadedCommitlintPluginModule;
+  const targetPluginModule: unknown = await import(packageName);
+  if (!isRecord(targetPluginModule)) {
+    return undefined;
+  }
 
-  const rulesCatalog = findRulesCatalog(targetPluginModule);
-  return rulesCatalog?.[ruleName];
+  const rule = findRulesCatalog(targetPluginModule)?.[ruleName];
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- a commitlint rule is a plain function from a plugin the user named in their config, and its parameters cannot be checked at runtime
+  return typeof rule === 'function' ? (rule as Rule<unknown>) : undefined;
 };
 
 /**
@@ -192,11 +167,12 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     return [true, ''];
   }
 
-  const parsed = parsedCommitData as LintCommit;
-  const options = value || {};
+  const options = value ?? {};
   const { signOffPatternsToIgnore, rulesToEnforce } = options;
 
-  const rawCommitMessage = parsed.raw;
+  // commitlint passes a `raw` property that the `Commit` type does not declare.
+  const rawCommitMessage: unknown =
+    'raw' in parsedCommitData ? parsedCommitData.raw : undefined;
 
   // noinspection SuspiciousTypeOfGuard
   if (typeof rawCommitMessage !== 'string') {
@@ -246,7 +222,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
   for (const ruleConfig of rulesToEnforce) {
     // noinspection SuspiciousTypeOfGuard
     if (
-      !ruleConfig ||
+      !isRecord(ruleConfig) ||
       typeof ruleConfig.packageName !== 'string' ||
       typeof ruleConfig.ruleName !== 'string'
     ) {
@@ -279,7 +255,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     }
 
     const outcome: RuleOutcome = await Promise.resolve(
-      ruleFunction(parsed, 'always', ruleValue),
+      ruleFunction(parsedCommitData, 'always', ruleValue),
     );
     const [isValid, messageFromSubRule] = outcome;
 

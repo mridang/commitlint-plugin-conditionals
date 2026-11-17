@@ -2,6 +2,7 @@
  * @file Unit tests for the `ignore-for-authors` commitlint rule.
  */
 import { jest } from '@jest/globals';
+import { createCommitObject } from 'conventional-commits-parser';
 import { ignoreForAuthors } from '../../src/rules/ignore-for-authors.js';
 import type { Commit } from 'conventional-commits-parser';
 import type { RuleOutcome, Rule } from '@commitlint/types';
@@ -32,24 +33,10 @@ const createCommit = (
 ): ExpectedCommitType => {
   const headerString =
     typeof rawInput === 'string' ? rawInput.split('\n', 1)[0] : null;
-  const mock = {
-    raw: rawInput,
-    header: headerString,
-    body: bodyInput,
-    footer: null,
-    type: null,
-    scope: null,
-    subject: null,
-    mentions: [],
-    notes: [],
-    references: [],
-    revert: null,
-    merge: null,
-    action: null,
-    owner: null,
-    name: null,
-  };
-  return mock as unknown as ExpectedCommitType;
+  return Object.assign(
+    createCommitObject({ header: headerString, body: bodyInput }),
+    { raw: rawInput },
+  );
 };
 
 /**
@@ -135,9 +122,7 @@ describe('ignoreForAuthors Rule - Basic Functionality & ignoreAuthorPatterns (no
   });
 
   test('should fail if parsed.raw is not a string (e.g., forced null)', async () => {
-    const commitWithInvalidRaw = {
-      raw: null,
-    } as unknown as ExpectedCommitType;
+    const commitWithInvalidRaw = createCommitObject({ raw: null });
     const options: IgnoreForAuthorsRuleOptions = {
       signOffPatternsToIgnore: ignoredSignOffPatternsBase, // Corrected
     };
@@ -156,6 +141,7 @@ describe('ignoreForAuthors Rule - Basic Functionality & ignoreAuthorPatterns (no
     const commit = createCommit('feat: test commit');
     const mixedPatterns: (string | number | null)[] = ['valid', 123, null];
     const options: IgnoreForAuthorsRuleOptions = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- the test passes a deliberately malformed list to prove the rule rejects non-string patterns at runtime
       signOffPatternsToIgnore: mixedPatterns as unknown as string[], // Corrected
     };
     const [valid, message]: RuleOutcome = await ignoreForAuthors(
@@ -253,10 +239,8 @@ describe('ignoreForAuthors Rule - rulesToEnforce Functionality', () => {
 
     mockCommitlintRulesCatalogue['body-max-line-length'].mockImplementation(
       (parsedComm, _when, maxLength?: unknown) => {
-        const parsed = parsedComm as ExpectedCommitType;
         if (
-          !parsed ||
-          typeof parsed.body !== 'string' ||
+          typeof parsedComm.body !== 'string' ||
           typeof maxLength !== 'number' ||
           maxLength <= 0
         ) {
@@ -265,7 +249,7 @@ describe('ignoreForAuthors Rule - rulesToEnforce Functionality', () => {
             'Mocked body-max-line-length: no body or invalid max length.',
           ];
         }
-        const lines = parsed.body.split('\n');
+        const lines = parsedComm.body.split('\n');
         if (lines.some((line) => line.length > maxLength)) {
           return [
             false,
