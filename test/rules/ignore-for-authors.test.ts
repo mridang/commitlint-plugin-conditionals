@@ -2,9 +2,9 @@
  * @file Unit tests for the `ignore-for-authors` commitlint rule.
  */
 import { jest } from '@jest/globals';
-import type { Commit as ParserCommit } from 'conventional-commits-parser';
-import type { RuleOutcome, Rule } from '@commitlint/types';
 import { ignoreForAuthors } from '../../src/rules/ignore-for-authors.js';
+import type { Commit } from 'conventional-commits-parser';
+import type { RuleOutcome, Rule } from '@commitlint/types';
 import type {
   IgnoreForAuthorsRuleOptions,
   ExternalRuleToEnforce,
@@ -15,7 +15,7 @@ import '@commitlint/rules';
 /**
  * The type for the commit object expected by the ignoreForAuthors rule.
  */
-type ExpectedCommitType = ParserCommit & { raw: string };
+type ExpectedCommitType = Commit & { raw: string };
 
 /**
  * Helper function to create a mock Commit object for testing.
@@ -55,16 +55,17 @@ const createCommit = (
 /**
  * Mocks for rule functions from `@commitlint/rules`.
  */
-const mockCommitlintRulesCatalogue: Record<string, jest.Mock<Rule<unknown>>> = {
+const mockCommitlintRulesCatalogue = {
   'type-enum': jest.fn<Rule<unknown>>(),
   'header-max-length': jest.fn<Rule<unknown>>(),
   'body-max-line-length': jest.fn<Rule<unknown>>(),
   'rule-to-malform': jest.fn<Rule<unknown>>(),
-};
+} satisfies Record<string, jest.Mock<Rule<unknown>>>;
 
 /**
  * Mocking the dynamic import for '@commitlint/rules'.
  */
+// eslint-disable-next-line tslop/no-module-mocking -- the plugin is loaded through a dynamic ESM import, which only unstable_mockModule can replace
 jest.unstable_mockModule('@commitlint/rules', () => ({
   __esModule: true,
   default: {
@@ -81,12 +82,8 @@ describe('ignoreForAuthors Rule - Basic Functionality & ignoreAuthorPatterns (no
   ];
 
   beforeEach(() => {
-    for (const key in mockCommitlintRulesCatalogue) {
-      if (Object.hasOwn(mockCommitlintRulesCatalogue, key)) {
-        mockCommitlintRulesCatalogue[key] = jest
-          .fn<Rule<unknown>>()
-          .mockReturnValue([true, '']);
-      }
+    for (const mock of Object.values(mockCommitlintRulesCatalogue)) {
+      mock.mockReset().mockReturnValue([true, '']);
     }
   });
 
@@ -215,12 +212,8 @@ describe('ignoreForAuthors Rule - rulesToEnforce Functionality', () => {
   };
 
   beforeEach(() => {
-    for (const key in mockCommitlintRulesCatalogue) {
-      if (Object.hasOwn(mockCommitlintRulesCatalogue, key)) {
-        mockCommitlintRulesCatalogue[key] = jest
-          .fn<Rule<unknown>>()
-          .mockReturnValue([true, '']);
-      }
+    for (const mock of Object.values(mockCommitlintRulesCatalogue)) {
+      mock.mockReset().mockReturnValue([true, '']);
     }
   });
 
