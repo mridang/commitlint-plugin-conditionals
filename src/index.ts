@@ -1,8 +1,8 @@
 /**
  * @file Entry point of the commitlint plugin that exports its rules.
  */
-import type { Rule, Plugin as CommitlintPluginType } from '@commitlint/types';
 import { ignoreForAuthors } from './rules/ignore-for-authors.js';
+import type { Rule, Plugin } from '@commitlint/types';
 
 /**
  * Defines the structure of the commitlint plugin being exported.
@@ -10,7 +10,7 @@ import { ignoreForAuthors } from './rules/ignore-for-authors.js';
  * respective rule implementation functions.
  * This structure aligns with the `Plugin` type from `@commitlint/types`.
  */
-interface PluginDefinition extends CommitlintPluginType {
+interface PluginDefinition extends Plugin {
   /**
    * An object where keys are rule names (strings) and values are the
    * corresponding rule functions. Each rule function must adhere to the

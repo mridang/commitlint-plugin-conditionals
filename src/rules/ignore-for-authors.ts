@@ -2,7 +2,7 @@
  * @file Implements the `ignore-for-authors` commitlint rule, which bypasses a configured rule set for trusted sign-offs.
  */
 import type { Rule, RuleConfigCondition, RuleOutcome } from '@commitlint/types';
-import type { Commit as ParserCommit } from 'conventional-commits-parser';
+import type { Commit } from 'conventional-commits-parser';
 
 /**
  * Defines the minimal expected structure of a dynamically imported
@@ -77,7 +77,7 @@ export interface IgnoreForAuthorsRuleOptions {
  * is present.
  */
 // @ts-expect-error: raw is not present in the Commit type.
-interface LintCommit extends ParserCommit {
+interface LintCommit extends Commit {
   raw: string;
 }
 
@@ -106,12 +106,10 @@ const findIgnoredSignOff = (
   rawCommitMessage: string,
   signOffPatterns: string[],
 ): string | undefined => {
-  const signOffRegex = /^Signed-off-by:(.*)$/gim;
-  const extractedSignOffs: string[] = [];
-  let match;
-  while ((match = signOffRegex.exec(rawCommitMessage)) !== null) {
-    extractedSignOffs.push(match[1].trim());
-  }
+  const extractedSignOffs = Array.from(
+    rawCommitMessage.matchAll(/^Signed-off-by:(.*)$/gimu),
+    (match) => match[1].trim(),
+  );
 
   return signOffPatterns.find((ignorePattern) =>
     extractedSignOffs.some((actualSignOff) =>
@@ -186,7 +184,7 @@ const resolveRuleFunction = async (
  * });
  */
 export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
-  parsedCommitData: ParserCommit,
+  parsedCommitData: Commit,
   when: RuleConfigCondition = 'always',
   value?: IgnoreForAuthorsRuleOptions,
 ): Promise<RuleOutcome> => {
@@ -244,6 +242,7 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     ];
   }
 
+  // eslint-disable-next-line functional/no-loop-statements -- the rules run sequentially and the first failing rule returns early
   for (const ruleConfig of rulesToEnforce) {
     // noinspection SuspiciousTypeOfGuard
     if (
@@ -258,18 +257,19 @@ export const ignoreForAuthors: Rule<IgnoreForAuthorsRuleOptions> = async (
     }
 
     const { packageName, ruleName, value: ruleValue } = ruleConfig;
-    let ruleFunction: Rule<unknown> | undefined;
-
-    try {
-      ruleFunction = await resolveRuleFunction(packageName, ruleName);
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+    const loaded = await resolveRuleFunction(packageName, ruleName)
+      .then((resolved) => ({ resolved, errorMessage: null }))
+      .catch((error: unknown) => ({
+        resolved: null,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      }));
+    if (loaded.errorMessage !== null) {
       return [
         false,
-        `Error loading plugin package '${packageName}': ${errorMessage}`, // Prefix removed
+        `Error loading plugin package '${packageName}': ${loaded.errorMessage}`, // Prefix removed
       ];
     }
+    const ruleFunction = loaded.resolved;
 
     if (typeof ruleFunction !== 'function') {
       return [
